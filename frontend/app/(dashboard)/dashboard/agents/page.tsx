@@ -1,10 +1,8 @@
 "use client";
 
-import React from "react";
-const { useEffect, useState } = React;
+import React, { useEffect, useState } from "react";
 
 interface Agent {
-
   id: string;
   name: string;
   category: string;
@@ -64,7 +62,7 @@ export default function AgentsPage() {
       <div className="flex justify-between items-center mb-12">
         <div>
           <h2 className="text-4xl font-black text-gray-900 tracking-tight">Agent Workforce</h2>
-          <p className="text-gray-500 mt-2 font-medium">Manage and deploy your autonomous specialist agents.</p>
+          <p className="text-gray-500 mt-2 font-medium">Manage and deploy your autonomous especialistas.</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -75,15 +73,14 @@ export default function AgentsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.map((agent: Agent) => (
-
+        {agents.map((agent) => (
           <div
             key={agent.id}
             className="group bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300 transform hover:-translate-y-1"
           >
             <div className="flex justify-between items-start mb-4">
               <div className={`p-3 rounded-2xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors`}>
-                {agent.category === 'finance' ? '💰' : agent.category === 'hr' ? '👥' : agent.category === 'sales' ? '📈' : '🛠️'}
+                {agent.category === 'finance' ? '💰' : agent.category === 'hr' ? '👥' : '🛠️'}
               </div>
               <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-widest border border-emerald-100">
                 {agent.status}
@@ -99,12 +96,6 @@ export default function AgentsPage() {
             </div>
           </div>
         ))}
-        {agents.length === 0 && (
-           <div className="col-span-full py-20 text-center border-2 border-dashed border-gray-200 rounded-[32px] bg-gray-50/50">
-             <div className="text-4xl mb-4 opacity-20">🤖</div>
-             <p className="text-gray-400 font-medium">No agents active in the current workforce.</p>
-           </div>
-        )}
       </div>
 
       {/* Create Agent Modal */}
@@ -124,9 +115,7 @@ export default function AgentsPage() {
                   placeholder="e.g. Finance Oracle"
                   className="w-full bg-gray-50 border-none rounded-2xl p-4 text-gray-800 focus:ring-2 focus:ring-indigo-500 font-medium"
                   value={newAgent.name}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewAgent({ ...newAgent, name: e.target.value })}
-
-
+                  onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -135,9 +124,7 @@ export default function AgentsPage() {
                   <select
                     className="w-full bg-gray-50 border-none rounded-2xl p-4 text-gray-800 focus:ring-2 focus:ring-indigo-500 font-medium"
                     value={newAgent.category}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewAgent({ ...newAgent, category: e.target.value })}
-
-
+                    onChange={(e) => setNewAgent({ ...newAgent, category: e.target.value })}
                   >
                     <option value="finance">Finance</option>
                     <option value="hr">HR</option>
@@ -157,9 +144,7 @@ export default function AgentsPage() {
                   placeholder="What does this agent do?"
                   className="w-full bg-gray-50 border-none rounded-2xl p-4 text-gray-800 focus:ring-2 focus:ring-indigo-500 font-medium"
                   value={newAgent.description}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewAgent({ ...newAgent, description: e.target.value })}
-
-
+                  onChange={(e) => setNewAgent({ ...newAgent, description: e.target.value })}
                 />
               </div>
               <button
