@@ -21,12 +21,16 @@ class AgentState(BaseModel):
     cost_total: float = 0.0
     timestamp: str = ""
 
+from app.config import settings
+
 # ============ LLM ============
 llm = ChatAnthropic(
     model="claude-3-5-sonnet-20241022",
+    api_key=settings.ANTHROPIC_API_KEY,
     temperature=0.3,  # Lower for governance
     max_tokens=2000
 )
+
 
 # ============ NODES ============
 
@@ -84,6 +88,7 @@ Respond ONLY in JSON (no markdown):
         state.approval_needed = data.get("needs_approval", False)
         state.cost_total = data.get("estimated_cost", 0.0)
         
+        logger.info(f"[Supervisor] Reasoning: {state.supervisor_reasoning}")
         logger.info(f"[Supervisor] Assigned {len(state.specialist_assignments)} tasks")
         
     except Exception as e:
@@ -138,6 +143,8 @@ Respond in JSON:
             state.outputs["finance_results"] = []
         state.outputs["finance_results"].append(result)
         
+        logger.info(f"[Finance Agent] Outcome: {result.get('outcome')}")
+        logger.info(f"[Finance Agent] Message: {result.get('message')}")
         logger.info(f"[Finance Agent] Completed: {task}")
         
     except Exception as e:
@@ -180,6 +187,8 @@ Respond in JSON:
             state.outputs["hr_results"] = []
         state.outputs["hr_results"].append(result)
         
+        logger.info(f"[HR Agent] Outcome: {result.get('outcome')}")
+        logger.info(f"[HR Agent] Message: {result.get('message')}")
         logger.info(f"[HR Agent] Completed: {task}")
         
     except Exception as e:
@@ -223,6 +232,8 @@ Respond in JSON:
             state.outputs["sales_results"] = []
         state.outputs["sales_results"].append(result)
         
+        logger.info(f"[Sales Agent] Outcome: {result.get('outcome')}")
+        logger.info(f"[Sales Agent] Message: {result.get('message')}")
         logger.info(f"[Sales Agent] Completed: {task}")
         
     except Exception as e:
@@ -234,8 +245,18 @@ Respond in JSON:
 def compile_results(state: AgentState) -> AgentState:
     """Compile specialist results into final output"""
     
+    # Extract a primary message for the user
+    primary_msg = "Task completed successfully."
+    for category, results in state.outputs.items():
+        if results and isinstance(results, list):
+            res = results[0]
+            if isinstance(res, dict) and res.get("message"):
+                primary_msg = res["message"]
+                break
+
     state.final_output = {
         "task_id": state.task_id,
+        "message": primary_msg,
         "supervisor_reasoning": state.supervisor_reasoning,
         "specialist_results": state.outputs,
         "total_cost": state.cost_total,
@@ -243,7 +264,7 @@ def compile_results(state: AgentState) -> AgentState:
         "timestamp": datetime.utcnow().isoformat()
     }
     
-    logger.info(f"[Supervisor] Task {state.task_id} completed")
+    logger.info(f"[Supervisor] Task {state.task_id} completed. Message: {primary_msg}")
     
     return state
 

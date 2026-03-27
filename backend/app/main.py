@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import init_db
 from app.utils.logger import setup_logging
-from app.api import agents, tasks
+from app.api import agents_router, tasks_router
 from app.orchestration import initialize_supervisor
 
 # Setup logging
@@ -48,8 +48,9 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
-app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
+app.include_router(agents_router, prefix="/api/agents", tags=["agents"])
+app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
+
 
 @app.get("/health")
 async def health_check():

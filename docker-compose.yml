@@ -6,6 +6,8 @@ services:
       POSTGRES_USER: helixos
       POSTGRES_PASSWORD: helixos_dev_password
       POSTGRES_DB: helixos
+
+
     ports:
       - "5432:5432"
     volumes:
@@ -37,15 +39,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file: backend/.env
     container_name: helix_backend
-    environment:
-      DATABASE_URL: postgresql://helixos:helixos_dev_password@postgres:5432/helixos
-      REDIS_URL: redis://redis:6379
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      ENVIRONMENT: development
-      DEBUG: "true"
-      CHROMA_DB_URL: http://chroma:8000
     ports:
+
+
+
       - "8000:8000"
     depends_on:
       postgres:

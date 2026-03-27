@@ -1,30 +1,51 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
 import os
+from app.utils.logger import setup_logging
+
+# Initialize logging immediately to capture startup status
+logger = setup_logging()
+
+# Load .env file explicitly to ensure it's in the environment
+load_dotenv()
+
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", 
-        "postgresql://helixos:helixos_dev_password@localhost:5432/helix_db"
-    )
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    DATABASE_URL: str = "postgresql://helixos:helixos_dev_password@localhost:5432/helixos"
+
+    REDIS_URL: str = "redis://localhost:6379"
     
     # LLM APIs
-    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
     
     # Environment
-    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = True
     
     # Frontend
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # Vector DB
-    CHROMA_DB_URL: str = os.getenv("CHROMA_DB_URL", "http://localhost:8001")
+    CHROMA_DB_URL: str = "http://localhost:8001"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore"
+    )
 
 settings = Settings()
+
+# Log API key status for visibility
+if not settings.ANTHROPIC_API_KEY:
+    logger.warning("ANTHROPIC_API_KEY is not set")
+else:
+    logger.info("ANTHROPIC_API_KEY is successfully loaded")
+
+if not settings.OPENAI_API_KEY:
+    logger.warning("OPENAI_API_KEY is not set")
+else:
+    logger.info("OPENAI_API_KEY is successfully loaded")
