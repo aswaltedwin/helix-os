@@ -87,7 +87,9 @@ async def list_tasks(
             "status": t.status,
             "created_at": t.created_at,
             "message": t.output_data.get("message") if t.output_data else None,
+            "output": t.output_data,
             "cost": t.cost_actual
         }
+
         for t in tasks
     ]

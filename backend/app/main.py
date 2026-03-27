@@ -40,12 +40,25 @@ app.add_middleware(
     allow_origins=[
         settings.FRONTEND_URL,
         "http://localhost:3000",
-        "http://localhost"
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://0.0.0.0",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    logger.info(f"🌐 {request.method} {request.url}")
+    response = await call_next(request)
+    return response
+
 
 # Include routers
 app.include_router(agents_router, prefix="/api/agents", tags=["agents"])
