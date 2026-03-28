@@ -1,0 +1,146 @@
+[
+  {
+    "agent_type": "finance",
+    "task": "Mock task for finance",
+    "decision": {
+      "outcome": "success",
+      "confidence": 0.98,
+      "message": "Oracle Review: Analysis of 'Mock task for finance' complete. High-value transaction noted. Verification in progress.",
+      "tool_call": {
+        "name": "verify_purchase_order",
+        "params": {
+          "invoice_id": "task-1774637049",
+          "amount": 12000.0
+        }
+      },
+      "data": {
+        "verified_amount": 12000.0
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T18:44:09.237403"
+  },
+  {
+    "agent_type": "hr",
+    "task": "Mock task for hr",
+    "decision": {
+      "outcome": "success",
+      "message": "HR Specialist Action: Task 'Mock task for hr' analyzed and processed according to company policy.",
+      "tool_call": {
+        "name": "check_leave_policy",
+        "params": {
+          "employee_id": "EMP-912",
+          "task_id": "task-1774637207"
+        }
+      },
+      "data": {
+        "status": "processed"
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T18:46:47.320899"
+  },
+  {
+    "agent_type": "hr",
+    "task": "Mock task for hr",
+    "decision": {
+      "outcome": "success",
+      "message": "HR Specialist Action: Task 'Mock task for hr' analyzed and processed according to company policy.",
+      "tool_call": {
+        "name": "check_leave_policy",
+        "params": {
+          "employee_id": "EMP-912",
+          "task_id": "task-1774638567"
+        }
+      },
+      "data": {
+        "status": "processed"
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T19:09:27.522207"
+  },
+  {
+    "agent_type": "finance",
+    "task": "Mock task for finance",
+    "decision": {
+      "outcome": "success",
+      "confidence": 0.98,
+      "message": "Oracle Review: Analysis of 'Mock task for finance' complete. High-value transaction noted. Verification in progress.",
+      "tool_call": {
+        "name": "verify_purchase_order",
+        "params": {
+          "invoice_id": "task-1774638720",
+          "amount": 12000.0
+        }
+      },
+      "data": {
+        "verified_amount": 12000.0
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T19:12:00.090508"
+  },
+  {
+    "agent_type": "finance",
+    "task": "Mock task for finance",
+    "decision": {
+      "outcome": "success",
+      "confidence": 0.98,
+      "message": "Oracle Review: Analysis of 'Mock task for finance' complete. High-value transaction noted. Verification in progress.",
+      "tool_call": {
+        "name": "verify_purchase_order",
+        "params": {
+          "invoice_id": "task-1774639093",
+          "amount": 12000.0
+        }
+      },
+      "data": {
+        "verified_amount": 12000.0
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T19:18:13.330374"
+  },
+  {
+    "agent_type": "hr",
+    "task": "Mock task for hr",
+    "decision": {
+      "outcome": "success",
+      "message": "Personnel compliance review for 'Mock task for hr' finalized. Policy alignment confirmed.",
+      "tool_call": {
+        "name": "check_leave_policy",
+        "params": {
+          "employee_id": "EMP-811",
+          "task_id": "task-1774639459"
+        }
+      },
+      "data": {
+        "policy_status": "aligned"
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T19:24:19.206415"
+  },
+  {
+    "agent_type": "finance",
+    "task": "Assess fiscal impact for: create a senior engineer offer letter for alex rivera",
+    "decision": {
+      "outcome": "success",
+      "confidence": 0.98,
+      "message": "Fiscal validation for objective 'Assess fiscal impact for: create a senior engineer offer letter for alex rivera' completed. Records verified.",
+      "tool_call": {
+        "name": "verify_purchase_order",
+        "params": {
+          "invoice_id": "task-1774640030",
+          "amount": 12000.0
+        }
+      },
+      "data": {
+        "verified_amount": 12000.0
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-27T19:33:50.308365"
+  }
+]

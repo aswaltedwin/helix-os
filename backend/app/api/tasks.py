@@ -64,11 +64,13 @@ async def execute_task(
         return {
             "task_id": result["task_id"],
             "status": "completed",
-            "message": final_msg,
+            "input_objective": result["final_output"].get("input_objective"),
+            "executive_conclusion": result["final_output"].get("executive_conclusion"),
             "output": result["final_output"],
             "cost": result["cost_total"],
             "reasoning": result["supervisor_reasoning"]
         }
+
         
     except Exception as e:
         logger.error(f"Task execution failed: {e}")
@@ -86,10 +88,12 @@ async def list_tasks(
             "id": t.id,
             "status": t.status,
             "created_at": t.created_at,
-            "message": t.output_data.get("message") if t.output_data else None,
+            "input_objective": t.output_data.get("input_objective") if t.output_data else None,
+            "executive_conclusion": t.output_data.get("executive_conclusion") if t.output_data else None,
             "output": t.output_data,
             "cost": t.cost_actual
         }
+
 
         for t in tasks
     ]

@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 from typing import Annotated, TypedDict, List, Dict, Any, Optional
 import operator
 from .tools import run_agent_tool
+from .memory import get_experience_summary, store_memory
+
 
 
 # ============ STATE ============
@@ -109,17 +111,40 @@ Respond ONLY in JSON (no markdown):
     
     try:
         if IS_MOCK_MODE:
-            # Simulated supervisor reasoning
-            data = {
-                "reasoning": "Simulated analysis: Routing to available specialists.",
-                "assignments": [
-                    {"agent_type": cat, "task": f"Mock task for {cat}", "priority": "normal"}
-                    for cat in state["agent_configs"].keys()
-                ][:2], # Limit to 2 for simplicity
+            # Intelligent Mock Decomposition for Demo
+            raw_task = (state["input_data"].get("task") or "").lower()
+            
+            assignments = []
+            reasoning = "Strategic decomposition initiated."
+            
+            if "onboard" in raw_task or "new hire" in raw_task:
+                reasoning = "Multi-agent onboarding workflow detected. Orchestrating HR and Fiscal setup."
+                assignments = [
+                    {"agent_type": "hr", "task": "Generate employment contract and verify policy alignment.", "priority": "high"},
+                    {"agent_type": "finance", "task": "Initiate payroll record creation and hardware budget allocation.", "priority": "high"}
+                ]
+            elif "invoice" in raw_task or "payment" in raw_task:
+                reasoning = "Financial audit workflow active."
+                assignments = [
+                    {"agent_type": "finance", "task": f"Analyze and verify: {raw_task}", "priority": "high"}
+                ]
+            else:
+                # Default to a broad analysis
+                # This block is removed as the new prompt handles general decomposition
+                # For mock mode, we can simulate a general decomposition if no specific keyword is found
+                reasoning = "General task analysis initiated. Decomposing into relevant specialist tasks."
+                assignments = [
+                    {"agent_type": "hr", "task": f"Review HR implications for: {raw_task}", "priority": "normal"},
+                    {"agent_type": "finance", "task": f"Assess fiscal impact for: {raw_task}", "priority": "normal"}
+                ]
 
+            data = {
+                "reasoning": reasoning,
+                "assignments": assignments,
                 "needs_approval": False,
-                "estimated_cost": 0.01
+                "estimated_cost": 0.02
             }
+
         else:
             response = llm.invoke(prompt)
             content = response.content.strip()
@@ -171,44 +196,71 @@ def finance_agent(state: AgentState) -> AgentState:
     task = assignment.get("task", "")
     priority = assignment.get("priority", "normal")
     
-    config = state["agent_configs"].get("finance", {})
-    system_prompt = config.get("system_prompt", "You are the Finance Agent.")
+    # 1. Experience Retrieval (Memory)
+    experience = get_experience_summary("finance", task)
+    
+    # 2. Elite System Prompt (Oracle)
+    oracle_prompt = """
+You are HelixOS Finance Oracle — an elite financial operations specialist.
+EXPERTISE: Invoice processing, PO matching, Fraud detection, and Compliance.
+DECISION RULES:
+- Always provide reasoning and a confidence score (0.0 - 1.0).
+- Flag any transaction > $10,000 immediately.
+- Use 'calculate_financials' for all math.
+- Use 'verify_purchase_order' to check against policies.
+- Use 'detect_fraud_patterns' for every high-value task.
+"""
     
     prompt = f"""
-{system_prompt}
+{oracle_prompt}
+
+{experience}
 
 Execute this task:
 Task: {task}
 Priority: {priority}
-Context: {state["memory_context"]}
-
-You have access to these TOOLS:
-1. `save_report(category, content)`: Use this to save a permanent record of your findings.
-2. `calculate_financials(expression)`: Use this for math (e.g. 5000 * 1.05).
 
 Respond in JSON ONLY:
 {{
   "outcome": "success" | "failure",
-  "message": "Human-readable summary",
-  "tool_call": {{ "name": "save_report" | "calculate_financials", "params": {{ ... }} }} | null,
-  "data": {{ ... }}
+  "confidence": 0.95,
+  "message": "Step-by-step reasoning",
+  "tool_call": {{ "name": "save_report" | "calculate_financials" | "verify_purchase_order" | "detect_fraud_patterns", "params": {{ ... }} }} | null,
+  "data": {{ "amount": 0, ... }}
 }}
 """
     
     try:
         if IS_MOCK_MODE:
-            tool_call = {"name": "save_report", "params": {"category": "finance", "content": f"Finance Audit for Task: {task}"}}
             result = {
                 "outcome": "success",
-                "message": f"Verified financials for task '{task}'. Generated report.",
-                "tool_call": tool_call,
-                "data": {"verified_amount": 5000}
+                "confidence": 0.98,
+                "message": f"Fiscal validation for objective '{task}' completed. Records verified.",
+                "tool_call": {"name": "verify_purchase_order", "params": {"invoice_id": state["task_id"], "amount": 12000.0}},
+                "data": {"verified_amount": 12000.0}
             }
         else:
             response = llm.invoke(prompt)
-            result = json.loads(response.content.strip())
+            content = response.content.strip()
+            # Try to parse JSON
+            if content.startswith("{"):
+                result = json.loads(content)
+            else:
+                # Extract JSON from response if wrapped
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    result = json.loads(match.group())
+                else:
+                    result = {
+                        "outcome": "failure",
+                        "confidence": 0.0,
+                        "message": "Failed to parse finance agent response.",
+                        "tool_call": None,
+                        "data": {}
+                    }
 
-        # Execute Tool if present
+        # 3. Tool Execution
         actions_taken = []
         if result.get("tool_call"):
             tool_name = result["tool_call"]["name"]
@@ -218,14 +270,22 @@ Respond in JSON ONLY:
                 
             tool_result = run_agent_tool(tool_name, tool_params)
             actions_taken.append(f"{tool_name}: {tool_result}")
-            logger.info(f"[Finance Agent] Tool {tool_name} returned: {tool_result}")
+            logger.info(f"[Finance Oracle] Tool {tool_name} returned: {tool_result}")
+
+        # 4. Memory Storage
+        store_memory("finance", task, result)
+
+        # 5. Validation Guardrails
+        if result.get("confidence", 0) < 0.9:
+            actions_taken.append("GUARDRAIL: Low confidence decision. Escalating to supervisor.")
+            result["outcome"] = "escalated"
 
         result["actions"] = actions_taken
-        logger.info(f"[Finance Agent] Completed: {task}")
+        logger.info(f"[Finance Oracle] Decision Confidence: {result.get('confidence')}")
         
         return {"outputs": {"finance_results": [result]}}
     except Exception as e:
-        logger.error(f"[Finance Agent] Error: {e}")
+        logger.error(f"[Finance Oracle] Error: {e}")
         return {"outputs": {"finance_results": [{"outcome": "failure", "error": str(e)}]}}
 
 
@@ -243,59 +303,85 @@ def hr_agent(state: AgentState) -> AgentState:
     
     task = assignment.get("task", "")
     
-    config = state["agent_configs"].get("hr", {})
-    system_prompt = config.get("system_prompt", "You are the HR Agent.")
+    # 1. Experience Retrieval (Memory)
+    experience = get_experience_summary("hr", task)
+    
+    # 2. Elite System Prompt (Specialist)
+    hr_specialist_prompt = """
+You are HelixOS HR Specialist — organizational compliance & talent operations expert.
+EXPERTISE: Onboarding, Leave management, Payroll compliance, and Performance.
+TOOLS:
+- `check_leave_policy(employee_id)`: Check vacation/sick balances.
+- `verify_team_coverage(date)`: Check for calendar conflicts.
+- `generate_offer_letter(name, position, salary)`: Create official offer documents.
+"""
     
     prompt = f"""
-{system_prompt}
+{hr_specialist_prompt}
+
+{experience}
 
 Execute this task:
 Task: {task}
-Context: {state["memory_context"]}
-
-You have access to these TOOLS:
-1. `save_report(category, content)`: Use this to save reports to disk.
 
 Respond in JSON ONLY:
 {{
   "outcome": "success" | "failure",
-  "message": "Human-readable summary",
-  "tool_call": {{ "name": "save_report", "params": {{ "category": "hr", "content": "..." }} }} | null,
+  "message": "Human-readable summary of HR action",
+  "tool_call": {{ "name": "check_leave_policy" | "verify_team_coverage" | "generate_offer_letter", "params": {{ ... }} }} | null,
   "data": {{ ... }}
 }}
 """
     
     try:
         if IS_MOCK_MODE:
-            tool_call = {"name": "save_report", "params": {"category": "hr", "content": f"HR Assessment for '{task}'"}}
             result = {
                 "outcome": "success",
-                "message": f"Completed HR task: {task}. Report archived.",
-                "tool_call": tool_call,
-                "data": {"status": "processed"}
+                "message": f"Personnel compliance review for '{task}' finalized. Policy alignment confirmed.",
+                "tool_call": {"name": "check_leave_policy", "params": {"employee_id": "EMP-811", "task_id": state["task_id"]}},
+                "data": {"policy_status": "aligned"}
             }
         else:
             response = llm.invoke(prompt)
-            result = json.loads(response.content.strip())
+            content = response.content.strip()
+            # Try to parse JSON
+            if content.startswith("{"):
+                result = json.loads(content)
+            else:
+                # Extract JSON from response if wrapped
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    result = json.loads(match.group())
+                else:
+                    result = {
+                        "outcome": "failure",
+                        "message": "Failed to parse HR agent response.",
+                        "tool_call": None,
+                        "data": {}
+                    }
 
-        # Execute Tool if present
+        # 3. Tool Execution
         actions_taken = []
         if result.get("tool_call"):
             tool_name = result["tool_call"]["name"]
             tool_params = result["tool_call"]["params"]
-            if tool_name == "save_report":
-                tool_params["task_id"] = state["task_id"]
+            tool_params["task_id"] = state["task_id"]
             
             tool_result = run_agent_tool(tool_name, tool_params)
             actions_taken.append(f"{tool_name}: {tool_result}")
 
+        # 4. Memory Storage
+        store_memory("hr", task, result)
+
         result["actions"] = actions_taken
-        logger.info(f"[HR Agent] Completed: {task}")
+        logger.info(f"[HR Specialist] Completed: {task}")
         
         return {"outputs": {"hr_results": [result]}}
     except Exception as e:
-        logger.error(f"[HR Agent] Error: {e}")
+        logger.error(f"[HR Specialist] Error: {e}")
         return {"outputs": {"hr_results": [{"outcome": "failure", "error": str(e)}]}}
+
 
 
 
@@ -336,16 +422,33 @@ Respond in JSON ONLY:
     
     try:
         if IS_MOCK_MODE:
-            tool_call = {"name": "save_report", "params": {"category": "sales", "content": f"Sales Analysis: {task}"}}
+            tool_call = {"name": "save_report", "params": {"category": "sales", "content": f"Sales Strategic Analysis: {task}"}}
             result = {
                 "outcome": "success",
-                "message": f"Analyzed leads for '{task}'. Strategy documented.",
+                "message": f"Sales optimization strategy for '{task}' implemented. Lead acquisition active.",
                 "tool_call": tool_call,
                 "data": {"leads_identified": 12}
             }
+
         else:
             response = llm.invoke(prompt)
-            result = json.loads(response.content.strip())
+            content = response.content.strip()
+            # Try to parse JSON
+            if content.startswith("{"):
+                result = json.loads(content)
+            else:
+                # Extract JSON from response if wrapped
+                import re
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                if match:
+                    result = json.loads(match.group())
+                else:
+                    result = {
+                        "outcome": "failure",
+                        "message": "Failed to parse sales agent response.",
+                        "tool_call": None,
+                        "data": {}
+                    }
 
         # Execute Tool if present
         actions_taken = []
@@ -369,20 +472,28 @@ Respond in JSON ONLY:
 
 
 def compile_results(state: AgentState) -> AgentState:
-    """Compile specialist results into final output"""
+    """Compile specialist results into final output with executive summary"""
     
-    # Extract a primary message for the user
-    primary_msg = "Task completed successfully."
+    specialist_conclusions = []
     for category, results in state["outputs"].items():
         if results and isinstance(results, list):
-            res = results[0]
-            if isinstance(res, dict) and res.get("message"):
-                primary_msg = res["message"]
-                break
+            for res in results:
+                if isinstance(res, dict) and res.get("message"):
+                    # Use a bullet point format for cleaner separation
+                    prefix = category.replace("_results", "").upper()
+                    specialist_conclusions.append(f"● **{prefix}**: {res['message']}")
+
+    # Synthesize Executive Conclusion
+    if specialist_conclusions:
+        # Joining with double newlines for frontend splitting or better parsing
+        executive_summary = "\n\n".join(specialist_conclusions)
+    else:
+        executive_summary = "Strategic execution complete. No anomalies detected within specialist domains."
 
     final_output = {
         "task_id": state["task_id"],
-        "message": primary_msg,
+        "input_objective": state["input_data"].get("task") or state["input_data"].get("description", "No description provided"),
+        "executive_conclusion": executive_summary,
         "supervisor_reasoning": state["supervisor_reasoning"],
         "specialist_results": state["outputs"],
         "total_cost": state["cost_total"],
@@ -390,9 +501,10 @@ def compile_results(state: AgentState) -> AgentState:
         "timestamp": datetime.utcnow().isoformat()
     }
 
-    logger.info(f"[Supervisor] Task {state['task_id']} completed. Message: {primary_msg}")
+    logger.info(f"[Supervisor] Task {state['task_id']} concluded.")
     
     return {"final_output": final_output}
+
 
 
 # ============ BUILD GRAPH ============

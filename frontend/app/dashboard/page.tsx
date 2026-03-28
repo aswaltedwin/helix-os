@@ -1,21 +1,21 @@
 "use client";
 
 import React from "react";
+import { FileText, Activity } from 'lucide-react';
 
-
-
-interface TaskData {
+interface Task {
   id: string;
-  status: string;
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  input_data: any;
+  input_objective?: string;
+  executive_conclusion?: string;
+  supervisor_reasoning?: string;
+  specialist_results?: Record<string, any[]>;
   created_at: string;
-  message: string | null;
-  cost: number;
-  output?: {
-    supervisor_reasoning?: string;
-    specialist_results?: Record<string, any[]>;
-  };
-  reasoning?: string;
+  total_cost?: number;
+  cost?: number; // fallback for legacy data
 }
+
 
 interface MetricsData {
   agents: Array<{
@@ -30,12 +30,12 @@ interface MetricsData {
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = React.useState<MetricsData | null>(null);
-  const [tasks, setTasks] = React.useState<TaskData[]>([]);
+  const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [taskInput, setTaskInput] = React.useState("");
   const [isRunning, setIsRunning] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = React.useState<TaskData | null>(null);
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
 
   const fetchData = async () => {
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                 Processing...
               </>
             ) : (
-              "Dispatch Swarm"
+              "Authorize Strategic Swarm"
             )}
           </button>
         </div>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
 
           <div className="divide-y divide-gray-100 max-h-[400px] overflow-auto">
             {tasks.length > 0 ? (
-              tasks.slice(0, 5).map((task: TaskData) => (
+              tasks.slice(0, 5).map((task: Task) => (
                 <div 
                   key={task.id} 
                   className="p-4 hover:bg-indigo-50/50 cursor-pointer transition-colors group relative"
@@ -246,15 +246,16 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <p className="text-sm font-medium text-gray-800 line-clamp-2 mb-2 pr-24">
-                    {task.message || "Initializing task execution..."}
+                    {task.input_objective || (typeof task.input_data === 'string' ? task.input_data : task.input_data?.description) || "Initializing task execution..."}
                   </p>
                   <div className="flex justify-between items-center text-[10px]">
+
                     <span className={`px-2 py-0.5 rounded-full font-bold uppercase ${
                       task.status === 'COMPLETED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
                     }`}>
                       {task.status}
                     </span>
-                    <span className="font-semibold text-gray-500 mr-2">Cost: ${task.cost.toFixed(3)}</span>
+                    <span className="font-semibold text-gray-500 mr-2">Cost: ${task.total_cost?.toFixed(3) ?? 0}</span>
                   </div>
                 </div>
               ))
@@ -284,7 +285,8 @@ export default function DashboardPage() {
               </button>
             </div>
             <div className="p-0 overflow-auto divide-y divide-gray-100">
-              {tasks.map((task: TaskData) => (
+              {tasks.map((task: Task) => (
+
 
                 <div 
                   key={task.id} 
@@ -304,10 +306,11 @@ export default function DashboardPage() {
                       </span>
                       <span className="text-xs text-gray-400 font-medium">{new Date(task.created_at).toLocaleString()}</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800">{task.message}</p>
+                    <p className="text-lg font-bold text-gray-800">{task.executive_conclusion || "Processing..."}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-black text- indigo-600 mb-1 leading-none uppercase tracking-widest">${task.cost.toFixed(4)}</div>
+                    <div className="text-xs font-black text-indigo-600 mb-1 leading-none uppercase tracking-widest">${(task.total_cost || task.cost || 0).toFixed(4)}</div>
+
                     <div className="text-[10px] font-bold text-gray-300 uppercase">Compute Cost</div>
                     <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-600 text-white text-[10px] font-black px-4 py-2 rounded-full inline-block">
                       OPEN REPORT
@@ -338,16 +341,19 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex-1 overflow-auto p-8">
-              {/* Supervisor Section */}
-              <div className="mb-10">
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Supervisor Reasoning</h4>
-                <div className="bg-indigo-50/50 border border-indigo-100 p-6 rounded-2xl relative">
-                  <div className="absolute -top-3 left-6 bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">Cognitive Node Alpha</div>
-                  <p className="text-gray-800 font-medium italic leading-relaxed">
-                    "{selectedTask.output?.supervisor_reasoning || selectedTask.reasoning || "Reasoning analyzed in real-time."}"
-                  </p>
-                </div>
+              {/* New Objective Section */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <FileText size={14} /> Original Objective
+                </h3>
+                <p className="text-lg font-bold text-slate-800 leading-tight">
+                  {selectedTask.input_objective || (typeof selectedTask.input_data === 'string' ? selectedTask.input_data : (selectedTask.input_data?.task || selectedTask.input_data?.description)) || "No objective defined"}
+                </p>
               </div>
+
+              {/* Supervisor Section */}
+
+
 
               {/* Specialist Section */}
               <div>
@@ -391,18 +397,37 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
+
+              {/* New Executive Conclusion Section */}
+              {selectedTask.executive_conclusion && (
+                <div className="mt-10 bg-indigo-600 rounded-2xl p-8 shadow-xl shadow-indigo-200 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                    <Activity size={80} />
+                  </div>
+                  <h3 className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    Final Executive Conclusion
+                  </h3>
+
+                  <div className="text-xl font-bold text-white leading-relaxed relative z-10 whitespace-pre-wrap">
+                    {selectedTask.executive_conclusion}
+                  </div>
+
+                </div>
+              )}
             </div>
+
 
             <div className="p-6 border-t border-gray-100 bg-gray-50/30 flex justify-between items-center text-[10px] font-bold text-gray-400">
               <div className="flex gap-4">
                 <span>Task ID: {selectedTask.id}</span>
                 <span>Created: {new Date(selectedTask.created_at).toLocaleString()}</span>
               </div>
-              <div className="text-indigo-600">Computation Cost: ${selectedTask.cost.toFixed(4)}</div>
+              <div className="text-indigo-600">Computation Cost: ${(selectedTask.total_cost || selectedTask.cost || 0).toFixed(4)}</div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
