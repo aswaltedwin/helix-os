@@ -22,6 +22,7 @@ class AgentResponse(BaseModel):
     category: str
     description: Optional[str]
     status: str = "ACTIVE"
+    capabilities: List[str] = []
 
 
 @router.post("/")
@@ -46,6 +47,20 @@ async def create_agent(
     db.commit()
     db.refresh(db_agent)
     return db_agent
+
+@router.delete("/{agent_id}")
+async def delete_agent(
+    agent_id: str,
+    db: Session = Depends(get_db)
+):
+    """Delete an agent from the database"""
+    db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    if not db_agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    db.delete(db_agent)
+    db.commit()
+    return {"message": "Agent deleted successfully", "id": agent_id}
 
 @router.get("/")
 async def list_agents(

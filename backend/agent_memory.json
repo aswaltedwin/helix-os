@@ -142,5 +142,25 @@
     },
     "outcome": "success",
     "timestamp": "2026-03-27T19:33:50.308365"
+  },
+  {
+    "agent_type": "hr",
+    "task": "Review HR implications for: audit hr compliance records",
+    "decision": {
+      "outcome": "success",
+      "message": "Personnel compliance review for 'Review HR implications for: audit hr compliance records' finalized. Policy alignment confirmed.",
+      "tool_call": {
+        "name": "check_leave_policy",
+        "params": {
+          "employee_id": "EMP-811",
+          "task_id": "task-1774692920"
+        }
+      },
+      "data": {
+        "policy_status": "aligned"
+      }
+    },
+    "outcome": "success",
+    "timestamp": "2026-03-28T10:15:20.647099"
   }
 ]

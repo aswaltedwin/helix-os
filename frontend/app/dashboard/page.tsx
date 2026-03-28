@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { FileText, Activity } from 'lucide-react';
 
 interface Task {
@@ -43,7 +44,7 @@ export default function DashboardPage() {
     try {
       const [metricsRes, tasksRes] = await Promise.all([
         fetch(`${apiUrl}/api/agents/metrics`),
-        fetch(`${apiUrl}/api/tasks/`)
+        fetch(`${apiUrl}/api/tasks`)
       ]);
       
       if (metricsRes.ok && tasksRes.ok) {
@@ -51,11 +52,13 @@ export default function DashboardPage() {
         const tasksData = await tasksRes.json();
         setMetrics(metricsData);
         setTasks(tasksData);
-        console.log("Fetched Tasks Data:", tasksData[0]); // Diagnostic
+      } else {
+        throw new Error("Backend response error");
       }
 
     } catch (error) {
       console.error("Dashboard Fetch Error:", error);
+      setErrorMsg("Failed to synchronize with HelixOS backend. Verify the API is online.");
     } finally {
       setLoading(false);
     }
@@ -183,9 +186,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Agents Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/10">
             <h3 className="text-lg font-semibold text-gray-800">Operational Agents</h3>
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Live Status</span>
+            <Link 
+              href="/dashboard/agents" 
+              className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-widest transition-all"
+            >
+              Manage Specialists →
+            </Link>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-gray-50/50">

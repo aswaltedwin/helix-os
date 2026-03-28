@@ -17,7 +17,7 @@ export default function DashboardLayout({
 
         <nav className="flex-1 p-6 space-y-2" suppressHydrationWarning>
           <NavLink href="/dashboard" label="Dashboard" icon="📊" />
-          <NavLink href="/dashboard/agents" label="Agents" icon="🤖" />
+          <NavLink href="/dashboard/agents" label="Agents" icon="👥" />
           <NavLink href="/dashboard/workflows" label="Workflows" icon="⚙️" />
           <NavLink href="/dashboard/governance" label="Governance" icon="⚖️" />
         </nav>

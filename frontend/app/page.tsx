@@ -12,14 +12,14 @@ export default function Home() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-blue-900 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-900 flex items-center justify-center" suppressHydrationWarning>
         <div className="text-white text-4xl font-black">HelixOS</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center" suppressHydrationWarning>
       <div className="text-center text-white max-w-2xl mx-auto px-6">
         <h1 className="text-5xl font-bold mb-4">HelixOS</h1>
         <p className="text-2xl mb-8 opacity-90">
